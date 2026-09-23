@@ -14,4 +14,14 @@
     <string name="crime_report_suspect">the suspect is %s.</string>
     <string name="crime_report_subject">CriminalIntent Crime Report</string>
     <string name="send_report">Send crime report via</string>
+    <string name="crime_location_label">Location</string>
+    <string name="crime_location_none">No location recorded</string>
+    <string name="crime_location_format">Lat: %1$.6f, Lon: %2$.6f</string>
+    <string name="crime_location_button">Get Location</string>
+    <string name="crime_map_button">Show on Map</string>
+    <string name="location_permission_denied">Location permission is needed to record where the crime happened.</string>
+    <string name="location_unavailable">Couldn\'t get a location. On the emulator, set one in Extended Controls → Location.</string>
+    <string name="play_services_unavailable">Google Play services isn\'t available on this device.</string>
+    <string name="title_activity_maps">Crime Location</string>
+    <string name="crime_map_default_title">Crime scene</string>
 </resources>

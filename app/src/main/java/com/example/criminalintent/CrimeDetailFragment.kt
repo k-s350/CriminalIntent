@@ -1,5 +1,6 @@
 package com.example.criminalintent
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -10,7 +11,9 @@ import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.doOnLayout
 import androidx.core.widget.doOnTextChanged
@@ -23,11 +26,22 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Date
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
+
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION
+)
 
 class CrimeDetailFragment : Fragment() {
 
@@ -60,6 +74,31 @@ class CrimeDetailFragment : Fragment() {
                 oldCrime.copy(photoFileName = photoName)
             }
         }
+    }
+
+    // Week 10: the Play Services location client, created in onCreate()
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    // Week 10: runtime location permission request (Activity Result API)
+    private val requestLocationPermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results: Map<String, Boolean> ->
+        val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            getCrimeLocation()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                R.string.location_permission_denied,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
     }
 
     override fun onCreateView(
@@ -120,6 +159,10 @@ class CrimeDetailFragment : Fragment() {
                 Uri.parse("")
             )
             crimeCamera.isEnabled = canResolveIntent(captureImageIntent)
+
+            crimeLocation.setOnClickListener {
+                getCrimeLocation()
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -183,6 +226,28 @@ class CrimeDetailFragment : Fragment() {
             }
 
             updatePhoto(crime.photoFileName)
+
+            val latitude = crime.latitude
+            val longitude = crime.longitude
+            if (latitude != null && longitude != null) {
+                crimeLocationText.text =
+                    getString(R.string.crime_location_format, latitude, longitude)
+                crimeMap.isEnabled = true
+                crimeMap.setOnClickListener {
+                    startActivity(
+                        MapsActivity.newIntent(
+                            requireContext(),
+                            latitude,
+                            longitude,
+                            crime.title
+                        )
+                    )
+                }
+            } else {
+                crimeLocationText.text = getString(R.string.crime_location_none)
+                crimeMap.isEnabled = false
+                crimeMap.setOnClickListener(null)
+            }
         }
     }
 
@@ -243,6 +308,76 @@ class CrimeDetailFragment : Fragment() {
                 binding.crimePhoto.tag = null
             }
         }
+    }
+
+    private fun getCrimeLocation() {
+        val context = requireContext()
+
+        // Pre-condition 1: location permission (ask for it if we don't have it yet)
+        if (ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestLocationPermissions.launch(LOCATION_PERMISSIONS)
+            return
+        }
+
+        // Pre-condition 2: Google Play services must be available
+        if (!isPlayServicesAvailable()) {
+            return
+        }
+
+        // Ask for the current location; the result arrives later in addOnSuccessListener
+        fusedLocationClient.getCurrentLocation(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            CancellationTokenSource().token
+        ).addOnSuccessListener(requireActivity()) { location ->
+            if (!isAdded) return@addOnSuccessListener
+
+            if (location != null) {
+                crimeDetailViewModel.updateCrime { oldCrime ->
+                    oldCrime.copy(
+                        latitude = location.latitude,
+                        longitude = location.longitude
+                    )
+                }
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    R.string.location_unavailable,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }.addOnFailureListener(requireActivity()) {
+            if (!isAdded) return@addOnFailureListener
+            Toast.makeText(
+                requireContext(),
+                R.string.location_unavailable,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun isPlayServicesAvailable(): Boolean {
+        val availability = GoogleApiAvailability.getInstance()
+        val result = availability.isGooglePlayServicesAvailable(requireContext())
+        if (result == ConnectionResult.SUCCESS) {
+            return true
+        }
+
+        if (availability.isUserResolvableError(result)) {
+            availability.getErrorDialog(requireActivity(), result, 0)?.show()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                R.string.play_services_unavailable,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        return false
     }
 
     private fun canResolveIntent(intent: Intent): Boolean {

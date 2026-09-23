@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Week 10: wrapped in a ScrollView so the new location section still fits on small screens -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:layout_margin="16dp"
     android:orientation="vertical">
 
@@ -83,4 +88,44 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/crime_report_text" />
+
+    <!-- Week 10: crime location -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/crime_location_label"
+        android:textAppearance="?attr/textAppearanceHeadline5" />
+
+    <TextView
+        android:id="@+id/crime_location_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:text="@string/crime_location_none"
+        tools:text="Lat: -26.717400, Lon: 153.062151" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/crime_location"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="@string/crime_location_button" />
+
+        <Button
+            android:id="@+id/crime_map"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:enabled="false"
+            android:text="@string/crime_map_button" />
+    </LinearLayout>
 </LinearLayout>
+
+</ScrollView>
