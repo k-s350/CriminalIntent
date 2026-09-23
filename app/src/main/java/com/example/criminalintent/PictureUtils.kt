@@ -4,9 +4,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import kotlin.math.roundToInt
 
+// Listing 17.14. Returns Bitmap? (not Bitmap) so a failed decode doesn't crash.
 fun getScaledBitmap(path: String, destWidth: Int, destHeight: Int): Bitmap? {
     // Read in the dimensions of the image on disk
-    var options = BitmapFactory.Options()
+    val options = BitmapFactory.Options()
     options.inJustDecodeBounds = true
     BitmapFactory.decodeFile(path, options)
 
@@ -14,22 +15,17 @@ fun getScaledBitmap(path: String, destWidth: Int, destHeight: Int): Bitmap? {
     val srcHeight = options.outHeight.toFloat()
 
     // Figure out how much to scale down by
-    var inSampleSize = 1
-    if (srcHeight > destHeight || srcWidth > destWidth) {
+    val sampleSize = if (srcHeight <= destHeight && srcWidth <= destWidth) {
+        1
+    } else {
         val heightScale = srcHeight / destHeight
         val widthScale = srcWidth / destWidth
 
-        val sampleScale = if (heightScale > widthScale) {
-            heightScale
-        } else {
-            widthScale
-        }
-        inSampleSize = sampleScale.roundToInt()
+        minOf(heightScale, widthScale).roundToInt()
     }
 
-    options = BitmapFactory.Options()
-    options.inSampleSize = inSampleSize
-
     // Read in and create final bitmap
-    return BitmapFactory.decodeFile(path, options)
+    return BitmapFactory.decodeFile(path, BitmapFactory.Options().apply {
+        inSampleSize = sampleSize
+    })
 }
