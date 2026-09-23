@@ -1,8 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.CriminalIntent" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Chapter 15: MaterialComponents theme (as in the course notes). NoActionBar because
+         activity_main.xml supplies its own Toolbar, which is set as the app bar in MainActivity. -->
+    <style name="Base.Theme.CriminalIntent" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/purple_500</item>
     </style>
 
     <style name="Theme.CriminalIntent" parent="Base.Theme.CriminalIntent" />
